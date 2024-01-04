@@ -1,0 +1,17 @@
+---
+
+servers: [
+    { hostname: "ceph-aio-nautilus", ceph_release: "nautilus" },
+    { hostname: "ceph-aio-octopus", ceph_release: "octopus" },
+    { hostname: "ceph-aio-pacific", ceph_release: "pacific" },
+    { hostname: "ceph-aio-quincy", ceph_release: "quincy" }
+]
+
+vm_cpu: 2
+vm_mem: 2048
+osd_count: 3
+osd_size: "8GB"
+net: "192.168.56.0/24"
+start_ip: "192.168.56.20"
+
+debug: false

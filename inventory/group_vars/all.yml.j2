@@ -1,0 +1,47 @@
+---
+configure_firewall: False
+debian_package_dependencies:
+  - jq
+  - htop
+  - lsscsi
+ntp_service_enabled: true
+ntp_daemon_type: chronyd
+ceph_origin: repository
+ceph_repository: community
+ceph_stable_release: {{ CEPH_RELEASE }}
+monitor_address_block: "192.168.56.0/24"
+mon_host_v1:
+  enabled: True
+  suffix: ':6789'
+mon_host_v2:
+  suffix: ':3300'
+osd_memory_target: 536870912
+public_network: "192.168.56.0/24"
+cluster_network: "192.168.56.0/24"
+osd_objectstore: bluestore
+ceph_conf_overrides:
+  mon:
+    auth_allow_insecure_global_id_reclaim: "false"
+dashboard_enabled: false
+secure_cluster: false
+
+crush_rule_config: true
+
+crush_rule_hdd:
+ name: osd_replicated_rule
+ root: default
+ type: osd
+ class: hdd
+ default: true
+
+crush_rules:
+  - {% raw %}"{{ crush_rule_hdd }}"{% endraw %}
+
+# osds
+devices:
+  - /dev/sdc
+  - /dev/sdd
+  - /dev/sde
+
+# RGW
+radosgw_address_block: 192.168.56.0/24
