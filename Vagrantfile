@@ -1,6 +1,8 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+Vagrant.require_version ">= 2.4.0"
+
 require 'yaml'
 require 'ipaddr'
 
