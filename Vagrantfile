@@ -70,7 +70,7 @@ Vagrant.configure("2") do |config|
       cephaio.vm.provision "shell",
         inline: "echo provisioning #{ceph_release}"
 
-      cephaio.vm.provision "ansible_local" do |ansible|
+      cephaio.vm.provision "bootstrap", type: "ansible_local" do |ansible|
         ansible.playbook = "setup.yml"
         ansible.extra_vars = { CEPH_RELEASE: "#{ceph_release}" }
         ansible.compatibility_mode = "2.0"
@@ -80,7 +80,7 @@ Vagrant.configure("2") do |config|
         end
       end
 
-      cephaio.vm.provision "ansible_local" do |ansible|
+      cephaio.vm.provision "ceph-ansible", type: "ansible_local" do |ansible|
         ansible.provisioning_path = "/home/vagrant/ceph-ansible"
         ansible.playbook = "site.yml.sample"
         ansible.inventory_path = "hosts"
