@@ -7,11 +7,13 @@ servers: [
     { hostname: "ceph-aio-quincy", ceph_release: "quincy" }
 ]
 
+# VM defaults:
 vm_cpu: 2
 vm_mem: 2048
 osd_count: 3
-osd_size: "8GB"
+osd_size: "5GB" # disk size >= 5GB
 net: "192.168.56.0/24"
 start_ip: "192.168.56.20"
 
+# Debug ceph-ansible playbooks
 debug: false
