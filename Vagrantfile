@@ -71,6 +71,16 @@ Vagrant.configure("2") do |config|
         inline: "echo provisioning #{ceph_release}"
 
       cephaio.vm.provision "bootstrap", type: "ansible_local" do |ansible|
+        ansible.playbook = "bootstrap.yml"
+        ansible.extra_vars = { CEPH_RELEASE: "#{ceph_release}" }
+        ansible.compatibility_mode = "2.0"
+
+        if DEBUG then
+          ansible.verbose = '-vvvv'
+        end
+      end
+
+      cephaio.vm.provision "setup", type: "ansible_local" do |ansible|
         ansible.playbook = "setup.yml"
         ansible.extra_vars = { CEPH_RELEASE: "#{ceph_release}" }
         ansible.compatibility_mode = "2.0"

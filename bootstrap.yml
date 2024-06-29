@@ -1,0 +1,76 @@
+---
+
+- hosts: all
+  gather_facts: true
+
+  vars:
+
+
+  tasks:
+
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        pkg:
+          - htop
+          - sysstat
+          - iotop
+          - jq
+          - unzip
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      become: true
+
+    - name: Uninstall packages
+      ansible.builtin.apt:
+        pkg:
+          - snapd
+        state: absent
+      become: true
+
+    - name: Ensure swap file exists
+      become: true
+      ansible.builtin.command: >
+        fallocate -l 4G /swapfile
+      args:
+        creates: '/swapfile'
+      register: swap_file_create
+
+    - name: Check if swap is mounted
+      ansible.builtin.shell:
+        swapon --show=NAME --noheadings | egrep "/swapfile$"
+      register: swap_on
+      changed_when: false
+      failed_when: false
+
+    - name: Configure swap area
+      when: swap_file_create is changed or swap_on.rc > 0
+      block:
+
+        - name: Set permissions on swap file
+          become: true
+          ansible.builtin.file:
+            path: "/swapfile"
+            owner: root
+            group: root
+            mode: "0600"
+
+        - name: Set up a Linux swap area
+          become: true
+          ansible.builtin.shell: mkswap /swapfile
+          register: mkswap_result
+
+        - name: Add swap file entry in fstab
+          become: true
+          mount:
+            path: swap
+            src: "/swapfile"
+            fstype: swap
+            opts: "sw"
+            dump: "0"
+            passno: "0"
+            state: present
+
+        - name: Run swapon on the swap file
+          become: true
+          ansible.builtin.shell: swapon -a
