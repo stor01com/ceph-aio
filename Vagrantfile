@@ -4,7 +4,6 @@
 Vagrant.require_version ">= 2.4.0"
 
 require 'yaml'
-require 'ipaddr'
 
 # Load settings from vagrant.yml or vagrant.yml.sample
 if File.file?("vagrant.yml")
@@ -18,8 +17,6 @@ VM_CPU          = settings["vm_cpu"]
 VM_MEM          = settings["vm_mem"]
 OSD_COUNT       = settings["osd_count"]
 OSD_SIZE        = settings["osd_size"]
-NET             = settings["net"]
-START_IP        = settings["start_ip"]
 DEBUG           = settings["debug"] || false
 
 BOXES = {
@@ -38,23 +35,19 @@ Vagrant.configure("2") do |config|
     config.vm.disk :disk, size: OSD_SIZE, name: "disk#{i}"
   end
  
-  net = IPAddr.new(NET)
-  ip = START_IP
-
   SERVERS.each do |server|
 
     ceph_release    = server["ceph_release"].downcase()
     server_hostname = server["hostname"]
+    server_ip       = server["ip"]
 
     (puts "Ceph '#{ceph_release}' release not supported."; abort) if not BOXES.has_key?(ceph_release)
 
-    (puts "IP #{ip} out of network scope (#{net}/#{net.prefix()})"; abort) if net.include?(ip) == false
-    
     config.vm.define "#{server_hostname}" do |cephaio|
 
       cephaio.vm.hostname = "#{server_hostname}"
       cephaio.vm.box = BOXES[ceph_release]
-      cephaio.vm.network "private_network", ip: ip
+      cephaio.vm.network "private_network", ip: "#{server_ip}"
 
       cephaio.vm.provider "virtualbox" do |vb|   
         vb.gui = false
@@ -64,8 +57,6 @@ Vagrant.configure("2") do |config|
         vb.linked_clone = true
         vb.check_guest_additions = false
       end
-
-      ip = ip.succ()
 
       cephaio.vm.provision "shell",
         inline: "echo provisioning #{ceph_release}"
