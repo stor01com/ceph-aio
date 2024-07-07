@@ -37,10 +37,11 @@ List all defined VMs and their status
 $ vagrant status
 Current machine states:
 
-ceph-aio-nautilus         not created (virtualbox)
-ceph-aio-octopus          not created (virtualbox)
-ceph-aio-pacific          not created (virtualbox)
-ceph-aio-quincy           not created (virtualbox)
+ceph-nautilus             not created (virtualbox)
+ceph-octopus              not created (virtualbox)
+ceph-pacific              not created (virtualbox)
+ceph-quincy               not created (virtualbox)
+ceph-reef                 not created (virtualbox)
 ...
 ```
 
@@ -54,7 +55,7 @@ Run a VM without provisioning
 ```vagrant up [vm-name] --no-provision```
 
 Provision a VM with a specific provisioner
-```vagrant up [vm-name] --provision-with [bootstrap, ceph-ansible]```
+```vagrant up [vm-name] --provision-with [bootstrap,setup-cephadm-ansible,cephadm-ansible,cephadm-bootstrap]```
 
 Reload (update hardware, add disks etc.) without provisioning a VM again
 ```vagrant reload --no-provision```
@@ -72,10 +73,6 @@ Access VM via ssh
 - [ceph-ansible docs](https://docs.ceph.com/projects/ceph-ansible/en/latest/)
 - [cephadm-ansible](https://github.com/ceph/cephadm-ansible)
 - [cephadm docs (latest)](https://docs.ceph.com/en/latest/cephadm/)
-
-## ToDo
-
-- [ ] add cephadm-ansible with cephadm-based deployment support
 
 <!--
 sudo fallocate -l 2G /swapfile
