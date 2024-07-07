@@ -23,7 +23,8 @@ BOXES = {
   "nautilus"  => "ubuntu/bionic64",
   "octopus"   => "ubuntu/focal64",
   "pacific"   => "ubuntu/focal64",
-  "quincy"    => "ubuntu/focal64"
+  "quincy"    => "ubuntu/jammy64",
+  "reef"      => "ubuntu/jammy64"
 }
 
 Vagrant.configure("2") do |config|
@@ -40,6 +41,7 @@ Vagrant.configure("2") do |config|
     ceph_release    = server["ceph_release"].downcase()
     server_hostname = server["hostname"]
     server_ip       = server["ip"]
+    deploy_with     = server["deploy_with"] || "cephadm"
 
     (puts "Ceph '#{ceph_release}' release not supported."; abort) if not BOXES.has_key?(ceph_release)
 
@@ -59,7 +61,7 @@ Vagrant.configure("2") do |config|
       end
 
       cephaio.vm.provision "shell",
-        inline: "echo provisioning #{ceph_release}"
+        inline: "echo provisioning #{server_hostname} with #{ceph_release} release @ #{server_ip}"
 
       cephaio.vm.provision "bootstrap", type: "ansible_local" do |ansible|
         ansible.playbook = "bootstrap.yml"
@@ -71,25 +73,55 @@ Vagrant.configure("2") do |config|
         end
       end
 
-      cephaio.vm.provision "setup", type: "ansible_local" do |ansible|
-        ansible.playbook = "setup.yml"
-        ansible.extra_vars = { CEPH_RELEASE: "#{ceph_release}" }
-        ansible.compatibility_mode = "2.0"
+      if deploy_with == "ceph-ansible"
+        cephaio.vm.provision "setup-ceph-ansible", type: "ansible_local" do |ansible|
+          ansible.playbook = "setup-ceph-ansible.yml"
+          ansible.extra_vars = { CEPH_RELEASE: "#{ceph_release}" }
+          ansible.compatibility_mode = "2.0"
 
-        if DEBUG then
-          ansible.verbose = '-vvvv'
+          if DEBUG then
+            ansible.verbose = '-vvvv'
+          end
         end
-      end
 
-      cephaio.vm.provision "ceph-ansible", type: "ansible_local" do |ansible|
-        ansible.provisioning_path = "/home/vagrant/ceph-ansible"
-        ansible.playbook = "site.yml.sample"
-        ansible.inventory_path = "hosts"
-        ansible.playbook_command = "/home/vagrant/venv/bin/ansible-playbook"
+        cephaio.vm.provision "ceph-ansible", type: "ansible_local" do |ansible|
+          ansible.provisioning_path = "/home/vagrant/ceph-ansible"
+          ansible.playbook = "site.yml.sample"
+          ansible.inventory_path = "hosts"
+          ansible.playbook_command = "/home/vagrant/venv/bin/ansible-playbook"
 
-        if DEBUG then
-          ansible.verbose = '-vvvv'
+          if DEBUG then
+            ansible.verbose = '-vvvv'
+          end
         end
+      else
+        cephaio.vm.provision "setup-cephadm-ansible", type: "ansible_local" do |ansible|
+          ansible.playbook = "setup-cephadm-ansible.yml"
+          ansible.extra_vars = { CEPH_RELEASE: "#{ceph_release}" }
+          ansible.compatibility_mode = "2.0"
+
+          if DEBUG then
+            ansible.verbose = '-vvvv'
+          end
+        end
+
+        cephaio.vm.provision "cephadm-ansible", type: "ansible_local" do |ansible|
+          ansible.provisioning_path = "/home/vagrant/cephadm-ansible"
+          ansible.playbook = "cephadm-preflight.yml"
+          ansible.inventory_path = "hosts"
+          ansible.playbook_command = "/home/vagrant/venv/bin/ansible-playbook"
+          ansible.extra_vars = {
+            ceph_origin: "community",
+            ceph_release: ceph_release
+          }
+          if DEBUG then
+            ansible.verbose = '-vvvv'
+          end
+        end
+
+        cephaio.vm.provision "shell", name: "cephadm-bootstrap",
+          inline: "sudo cephadm bootstrap --mon-ip=#{server_ip} --initial-dashboard-password=STOR01COM --dashboard-password-noupdate"
+
       end
 
       cephaio.vm.provision "shell",

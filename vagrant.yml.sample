@@ -1,10 +1,16 @@
 ---
 
+# deploy_with:
+#  caphadm:      Pacific and newer
+#  ceph-ansible: Natilus -> Reef
+#  default: cephadm
+
 servers: [
-    { hostname: "ceph-aio-nautilus", ceph_release: "nautilus", ip: "192.168.56.40" },
-    { hostname: "ceph-aio-octopus", ceph_release: "octopus", ip: "192.168.56.41" },
-    { hostname: "ceph-aio-pacific", ceph_release: "pacific", ip: "192.168.56.42" },
-    { hostname: "ceph-aio-quincy", ceph_release: "quincy", ip: "192.168.56.43" }
+    { hostname: "ceph-nautilus", ceph_release: "nautilus", ip: "192.168.56.31", deploy_with: "ceph-ansbile" },
+    { hostname: "ceph-octopus", ceph_release: "octopus", ip: "192.168.56.32", deploy_with: "ceph-ansible" },
+    { hostname: "ceph-pacific", ceph_release: "pacific", ip: "192.168.56.33", deploy_with: "cephadm" },
+    { hostname: "ceph-quincy", ceph_release: "quincy", ip: "192.168.56.34", deploy_with: "cephadm" },
+    { hostname: "ceph-reef", ceph_release: "reef", ip: "192.168.56.35", deploy_with: "cephadm" },
 ]
 
 # VM defaults:

@@ -1,0 +1,100 @@
+---
+
+- hosts: all
+  gather_facts: true
+
+  vars:
+    # venv_path: "{{ playbook_dir}}/venv-{{ ceph_stable_release }}"
+    venv_path: "~/venv"
+    ceph_stable_release: "{{ CEPH_RELEASE }}"
+
+    branches:
+      nautilus:
+        branch: "stable-4.0"
+      octopus:
+        branch: "stable-5.0"
+      pacific:
+        branch: "stable-6.0"
+      quincy:
+        branch: "stable-7.0"
+      reef:
+        branch: "stable-8.0"
+  tasks:
+
+    - assert:
+        that: ceph_stable_release in "{{ branches.keys() }}"
+        fail_msg: "Deploying {{ ceph_stable_release }} with ceph-ansible is not supported."
+
+    # - debug:
+    #     msg: "{{ branches.keys() }}"
+
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        pkg:
+          - python3-pip
+          - python3-dev
+          - python3-venv
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      become: true
+
+    - name: Create venv
+      ansible.builtin.pip:
+        name: pip
+        state: present
+        virtualenv: "{{ venv_path }}"
+        virtualenv_command: "/usr/bin/python3 -m venv"
+
+    - name: Upgrade pip
+      ansible.builtin.pip:
+        name: pip
+        state: latest
+        virtualenv: "{{ venv_path }}"
+        virtualenv_command: "/usr/bin/python3 -m venv"
+
+    - name: Clone ceph-ansible repo
+      ansible.builtin.git:
+        repo: https://github.com/ceph/ceph-ansible.git
+        dest: ~/ceph-ansible
+        version: "{{ branches[ceph_stable_release]['branch'] }}"
+
+    - name: Install ceph-ansible dependencies
+      ansible.builtin.pip:
+        requirements: "~/ceph-ansible/requirements.txt"
+        state: present
+        virtualenv: "{{ venv_path }}"
+        virtualenv_command: "/usr/bin/python3 -m venv"
+      environment:
+        - LANG: C.UTF-8
+        - LC_ALL: C.UTF-8
+
+    - name: Check for Ansible requirements
+      ansible.builtin.stat:
+        path: "~/ceph-ansible/requirements.yml"
+      register: requirements
+
+    - name: Install Ansible Collections
+      # shell: "/home/vagrant/.local/bin/ansible-galaxy install -r ~/ceph-ansible/requirements.yml"
+      ansible.builtin.shell: "~/venv/bin/ansible-galaxy install -r ~/ceph-ansible/requirements.yml"
+      args:
+        executable: /bin/bash
+      when: requirements.stat.exists
+
+    - name: Set initial cluster config
+      ansible.builtin.template:
+        src: inventory/group_vars/all.yml.j2
+        dest: ~/ceph-ansible/group_vars/all.yml
+
+    - name: Ensure inventory file exists
+      ansible.builtin.copy:
+        dest: ~/ceph-ansible/hosts
+        force: true
+        content: |
+          {{ ansible_hostname }} ansible_connection=local
+          [mons]
+          {{ ansible_hostname }}
+          [osds]
+          {{ ansible_hostname }}
+          [rgws]
+          {{ ansible_hostname }}

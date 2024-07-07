@@ -9,20 +9,18 @@
     ceph_stable_release: "{{ CEPH_RELEASE }}"
 
     branches:
-      nautilus:
-        branch: "stable-4.0"
-      octopus:
-        branch: "stable-5.0"
       pacific:
-        branch: "stable-6.0"
+        branch: "v3.2.0"
       quincy:
-        branch: "stable-7.0"
+        branch: "v3.2.0"
+      reef:
+        branch: "v3.2.0"
 
   tasks:
 
     - assert:
         that: ceph_stable_release in "{{ branches.keys() }}"
-        fail_msg: "{{ ceph_stable_release }} is not supported."
+        fail_msg: "Deploying {{ ceph_stable_release }} with cephadm is not supported."
 
     # - debug:
     #     msg: "{{ branches.keys() }}"
@@ -52,15 +50,15 @@
         virtualenv: "{{ venv_path }}"
         virtualenv_command: "/usr/bin/python3 -m venv"
 
-    - name: Clone ceph-ansible repo
+    - name: Clone cephadm-ansible repo
       ansible.builtin.git:
-        repo: https://github.com/ceph/ceph-ansible.git
-        dest: ~/ceph-ansible
+        repo: https://github.com/ceph/cephadm-ansible
+        dest: ~/cephadm-ansible
         version: "{{ branches[ceph_stable_release]['branch'] }}"
 
-    - name: Install ceph-ansible dependencies
+    - name: Install cephadm-ansible dependencies
       ansible.builtin.pip:
-        requirements: "~/ceph-ansible/requirements.txt"
+        requirements: "~/cephadm-ansible/requirements.txt"
         state: present
         virtualenv: "{{ venv_path }}"
         virtualenv_command: "/usr/bin/python3 -m venv"
@@ -70,24 +68,24 @@
 
     - name: Check for Ansible requirements
       ansible.builtin.stat:
-        path: "~/ceph-ansible/requirements.yml"
+        path: "~/cephadm-ansible/requirements.yml"
       register: requirements
 
     - name: Install Ansible Collections
-      # shell: "/home/vagrant/.local/bin/ansible-galaxy install -r ~/ceph-ansible/requirements.yml"
-      ansible.builtin.shell: "~/venv/bin/ansible-galaxy install -r ~/ceph-ansible/requirements.yml"
+      # shell: "/home/vagrant/.local/bin/ansible-galaxy install -r ~/cephadm-ansible/requirements.yml"
+      ansible.builtin.shell: "~/venv/bin/ansible-galaxy install -r ~/cephadm-ansible/requirements.yml"
       args:
         executable: /bin/bash
       when: requirements.stat.exists
 
-    - name: Set initial cluster config
-      ansible.builtin.template:
-        src: inventory/group_vars/all.yml.j2
-        dest: ~/ceph-ansible/group_vars/all.yml
+    # - name: Set initial cluster config
+    #   ansible.builtin.template:
+    #     src: inventory/group_vars/all.yml.j2
+    #     dest: ~/cephadm-ansible/group_vars/all.yml
 
     - name: Ensure inventory file exists
       ansible.builtin.copy:
-        dest: ~/ceph-ansible/hosts
+        dest: ~/cephadm-ansible/hosts
         force: true
         content: |
           {{ ansible_hostname }} ansible_connection=local
