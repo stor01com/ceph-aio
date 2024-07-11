@@ -120,7 +120,7 @@ Vagrant.configure("2") do |config|
         end
 
         cephaio.vm.provision "shell", name: "cephadm-bootstrap",
-          inline: "sudo cephadm bootstrap --mon-ip=#{server_ip} --initial-dashboard-password=STOR01COM --dashboard-password-noupdate"
+          inline: "sudo cephadm bootstrap --mon-ip=#{server_ip} --initial-dashboard-password=STOR01COM --dashboard-password-noupdate --single-host-defaults"
 
       end
 
